@@ -81,44 +81,44 @@ public class TileController : MonoBehaviour
             borderPoints.Add(new Vector3(points[i].x, points[i].y, 0));
         }
 
-        //if (borderQuality > 0 && points.Length > 2)
-        //{
-        //    int offset = 0;
-        //    for (int i = 0; i < points.Length; i++)
-        //    {
-        //        Vector3 pivot = points[(i + 1) % points.Length];
-        //        Vector3 current = ((Vector3) points[i]) - pivot;
-        //        Vector3 next = ((Vector3) points[(i + 2) % points.Length]) - pivot;
-        //        float dot = (current.x * next.x) + (current.y * next.y);
-        //        if (dot <= 0) continue;  // angle formed by points isn't very sharp
+        if (borderQuality > 0 && points.Length > 2)
+        {
+            int offset = 0;
+            for (int i = 0; i < points.Length; i++)
+            {
+                Vector3 pivot = points[(i + 1) % points.Length];
+                Vector3 current = ((Vector3)points[i]) - pivot;
+                Vector3 next = ((Vector3)points[(i + 2) % points.Length]) - pivot;
+                float dot = (current.x * next.x) + (current.y * next.y);
+                if (dot <= 0) continue;  // angle formed by points isn't very sharp
 
-        //        if (i + 1 == points.Length) offset = 0;
+                if (i + 1 == points.Length) offset = 0;
 
-        //        for (int j = 0; j < borderQuality; j++)
-        //        {
-        //            next /= 2;
-        //            current /= 2;
-        //            int calculated = (offset + ((i + 1) % points.Length) + j);
+                for (int j = 0; j < borderQuality; j++)
+                {
+                    next /= 2;
+                    current /= 2;
+                    int calculated = (offset + ((i + 1) % points.Length) + j);
 
-        //            //int pivotIndex = borderPoints.IndexOf(pivot);
-        //            //if (pivotIndex == -1) Debug.Log(calculated);
-        //            //Debug.Log(calculated);
-        //            borderPoints.Insert(calculated + 1, pivot + next);
-        //            borderPoints.Insert(calculated, pivot + current);
-        //        }
-        //        offset += borderQuality * 2;
-        //    }
-        //}
+                    //int pivotIndex = borderPoints.IndexOf(pivot);
+                    //if (pivotIndex == -1) Debug.Log(calculated);
+                    //Debug.Log(calculated);
+                    borderPoints.Insert(calculated + 1, pivot + next);
+                    borderPoints.Insert(calculated, pivot + current);
+                }
+                offset += borderQuality * 2;
+            }
+        }
 
         borderController.positionCount = borderPoints.Count;
         borderController.SetPositions(borderPoints.ToArray());
         borderController.startWidth = 1;
         borderController.endWidth = borderController.startWidth;
-        //if (tileDelegate != null)
-        //{
-        //    borderController.startWidth = tileDelegate.getLineWidth();
-        //    borderController.endWidth = borderController.startWidth;
-        //}
+        if (tileDelegate != null)
+        {
+            borderController.startWidth = tileDelegate.getLineWidth();
+            borderController.endWidth = borderController.startWidth;
+        }
 
         // update textbox shape
         int maxMisses = 10;
@@ -217,6 +217,11 @@ public class TileController : MonoBehaviour
 #endif
 
         shapeRenderer.color = applyAccent(fillColor, fillAccent);
+        shapeRenderer.material.SetFloat("_Strength", 0);
+
+        borderAccent = Vector3.zero;
+        borderController.sortingOrder = 0;
+
         if (highlight != Highlight.None)
         {
             float highlightValue = 0.75f * (highlight == Highlight.Adjacent ? 0.5f : 1);
@@ -226,10 +231,15 @@ public class TileController : MonoBehaviour
                 1 - (1 - shapeRenderer.color.g) * (1 - highlightValue),
                 1 - (1 - shapeRenderer.color.b) * (1 - highlightValue)
             );
+            borderAccent = Vector3.one;
+            borderController.sortingOrder = 1;
+            //shapeRenderer.material.SetFloat("_Strength", 1.2f * highlightValue);
+            shapeRenderer.material.SetFloat("_Phase", 10 * (Time.time % (MathF.PI * 2)));
+            
         }
 
         borderController.startColor = shapeRenderer.color;
-        //borderController.startColor = applyAccent(borderColor, borderAccent);
+        borderController.startColor = applyAccent(borderColor, borderAccent);
         borderController.endColor = borderController.startColor;
     }
 
@@ -271,8 +281,8 @@ public class TileController : MonoBehaviour
     public void Clear()
     {
         fillAccent = Vector3.one * 0.5f;
-        borderAccent = Vector3.one * 1;
-        borderController.sortingOrder = 1;
+        //borderAccent = Vector3.one * 1;
+        //borderController.sortingOrder = 1;
         text.enabled = true;
         cleared = true;
     }
@@ -280,24 +290,24 @@ public class TileController : MonoBehaviour
     public void Flag()
     {
         fillAccent = new Vector3(1, -1, -1);
-        borderAccent = Vector3.one * 1;
-        borderController.sortingOrder = 2;
+        //borderAccent = Vector3.one * 1;
+        //borderController.sortingOrder = 2;
         flagged = true;
     }
 
     public void Unflag()
     {
         fillAccent = Vector3.zero;
-        borderAccent = Vector3.zero;
-        borderController.sortingOrder = 0;
+        //borderAccent = Vector3.zero;
+        //borderController.sortingOrder = 0;
         flagged = false;
     }
 
     public void ResetValues()
     {
         fillAccent = Vector3.zero;
-        borderAccent = Vector3.zero;
-        borderController.sortingOrder = 0;
+        //borderAccent = Vector3.zero;
+        //borderController.sortingOrder = 0;
         flagged = false;
         cleared = false;
         text.enabled = false;

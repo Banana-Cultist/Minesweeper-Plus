@@ -34,9 +34,9 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
     void Start()
     {
         bounds = GetComponent<RectTransform>();
-        int w = 100;
-        tiles = GridBoard.initialize(this, w, w, bounds, 135f, 0);
-        //tiles = VoronoiBoard.initialize(this, w*w, bounds, 0);
+        int w = 25;
+        //tiles = GridBoard.initialize(this, w, w, bounds, 135f, 0);
+        tiles = VoronoiBoard.initialize(this, w*w, bounds, 30);
         placeMines(w * w / 5);
         InitializeBoard();
         colorBoard();
