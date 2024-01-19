@@ -5,7 +5,7 @@ using TMPro;
 
 public static class GridBoard
 {
-	public static List<TileController> initialize(BoardTypeDelegate board, int columns, int rows, RectTransform bounds, float offsetAngle, int offsetTile) {
+	public static List<TileController> initialize(IBoardTypeDelegate board, int columns, int rows, RectTransform bounds, float offsetAngle, int offsetTile) {
 		offsetAngle = Mathf.Clamp(offsetAngle, 0, 180);
 		List<TileController> tiles = new List<TileController>();
         Hashtable tilePoints = new Hashtable();
@@ -19,7 +19,7 @@ public static class GridBoard
 			for (int j = 0; j < columns; j++)
 			{
 				cursor.x += dx;
-                TileController tile = board.createTile();
+                TileController tile = board.CreateTile();
 
                 tile.points = new Vector2[4] {
 					bounds.rect.min + new Vector2(cursor.x, cursor.y),

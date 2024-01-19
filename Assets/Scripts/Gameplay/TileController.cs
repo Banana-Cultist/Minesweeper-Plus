@@ -9,7 +9,7 @@ using UnityEngine.U2D;
 public class TileController : MonoBehaviour
 {
     public Vector2[] points;
-    public HashSet<TileController> adjacents = new HashSet<TileController>();
+    public HashSet<TileController> adjacents = new();
     public Color fillColor;
     public Vector3 fillAccent = Vector3.zero;
     public Color borderColor;
@@ -21,7 +21,6 @@ public class TileController : MonoBehaviour
     public Highlight highlight = Highlight.None;
     public int adjacentMines = 0;
 
-
     public PolygonCollider2D polygonCollider;
     public SpriteShapeRenderer shapeRenderer;
     public SpriteShapeController shapeController;
@@ -29,8 +28,9 @@ public class TileController : MonoBehaviour
     public LineRenderer borderController;
     public int borderQuality;
     public TextMeshPro text;
+    public TileImage image;
 
-    public TileDelegate tileDelegate;
+    public ITileDelegate tileDelegate;
 
     // Start is called before the first frame update
     void Start()
@@ -38,7 +38,7 @@ public class TileController : MonoBehaviour
         text.enabled = false;
     }
 
-    public float round(float value, int decimals)
+    public float Round(float value, int decimals)
     {
         return Mathf.Floor(value * Mathf.Pow(10, decimals)) / ((int) Mathf.Pow(10, decimals));
     }
@@ -46,22 +46,7 @@ public class TileController : MonoBehaviour
     public void UpdateShape()
     {
         // clear out points that are too close to be rendered
-        List<Vector2> rawPoints = new();
-        for (int i = 0; i < points.Length; i++)
-        {
-            bool valid = true;
-            for(int j = 0; j < rawPoints.Count; j++)
-            {
-                if (Vector2.Distance(points[i], rawPoints[j]) < 0.1)
-                {
-                    valid = false;
-                    break;
-                }
-            }
-            if (valid) rawPoints.Add(points[i]);
-        }
-        points = new Vector2[rawPoints.Count];
-        points = rawPoints.ToArray();
+        RemoveClosePoints(0.1);
 
         // update collider
         polygonCollider.SetPath(0, points);
@@ -75,6 +60,42 @@ public class TileController : MonoBehaviour
         shapeRenderer.color = fillColor;
 
         // update border renderer; add extraneous points around sharp corners to fix line width issues
+        FixBorderWidth();
+
+        borderController.startWidth = 1;
+        borderController.endWidth = borderController.startWidth;
+        if (tileDelegate != null)
+        {
+            borderController.startWidth = tileDelegate.GetLineWidth();
+            borderController.endWidth = borderController.startWidth;
+        }
+
+        // update textbox shape
+        UpdateInnerBoundingBox();
+    }
+
+    private void RemoveClosePoints(double accuracy)
+    {
+        List<Vector2> rawPoints = new();
+        for (int i = 0; i < points.Length; i++)
+        {
+            bool valid = true;
+            for (int j = 0; j < rawPoints.Count; j++)
+            {
+                if (Vector2.Distance(points[i], rawPoints[j]) < accuracy)
+                {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) rawPoints.Add(points[i]);
+        }
+        points = new Vector2[rawPoints.Count];
+        points = rawPoints.ToArray();
+    }
+
+    private void FixBorderWidth()
+    {
         List<Vector3> borderPoints = new();
         for (int i = 0; i < points.Length; i++)
         {
@@ -87,8 +108,8 @@ public class TileController : MonoBehaviour
             for (int i = 0; i < points.Length; i++)
             {
                 Vector3 pivot = points[(i + 1) % points.Length];
-                Vector3 current = ((Vector3)points[i]) - pivot;
-                Vector3 next = ((Vector3)points[(i + 2) % points.Length]) - pivot;
+                Vector3 current = ((Vector3) points[i]) - pivot;
+                Vector3 next = ((Vector3) points[(i + 2) % points.Length]) - pivot;
                 float dot = (current.x * next.x) + (current.y * next.y);
                 if (dot <= 0) continue;  // angle formed by points isn't very sharp
 
@@ -98,7 +119,7 @@ public class TileController : MonoBehaviour
                 {
                     next /= 2;
                     current /= 2;
-                    int calculated = (offset + ((i + 1) % points.Length) + j);
+                    int calculated = offset + ((i + 1) % points.Length) + j;
 
                     //int pivotIndex = borderPoints.IndexOf(pivot);
                     //if (pivotIndex == -1) Debug.Log(calculated);
@@ -112,15 +133,10 @@ public class TileController : MonoBehaviour
 
         borderController.positionCount = borderPoints.Count;
         borderController.SetPositions(borderPoints.ToArray());
-        borderController.startWidth = 1;
-        borderController.endWidth = borderController.startWidth;
-        if (tileDelegate != null)
-        {
-            borderController.startWidth = tileDelegate.getLineWidth();
-            borderController.endWidth = borderController.startWidth;
-        }
+    }
 
-        // update textbox shape
+    private void UpdateInnerBoundingBox()
+    {
         int maxMisses = 10;
         float decayConstant = 2.8284f;
         float target = 1E-3f;
@@ -134,11 +150,11 @@ public class TileController : MonoBehaviour
             int misses = 0;
             while (misses < maxMisses)
             {
-                Vector2 random = new Vector2(
+                Vector2 random = new(
                     UnityEngine.Random.Range(bounds.min.x, bounds.max.x),
                     UnityEngine.Random.Range(bounds.min.y, bounds.max.y)
                 );
-                if (borderDistance(random) > borderDistance(center) &&
+                if (BorderDistance(random) > BorderDistance(center) &&
                     random != center && polygonCollider.OverlapPoint(random))
                 {
                     center = random;
@@ -160,23 +176,21 @@ public class TileController : MonoBehaviour
         } while (accuracy > target);
         Debug.Log(count);
 
-        text.rectTransform.position = (Vector3) center + transform.position;
-        text.rectTransform.sizeDelta = borderDistance(center) * 1.5f * Vector2.one;
+        Vector2 newSizeDelta = BorderDistance(center) * 1.5f * Vector2.one;
+        Vector3 newPosition = (Vector3)center + transform.position;
+
+        text.rectTransform.sizeDelta = newSizeDelta;
+        text.rectTransform.position = newPosition;
+
+        image.Resize(newSizeDelta, newPosition);
     }
 
     public void UpdateLabel()
     {
-        if (isMine)
-        {
-            text.text = "*";
-        }
-        else
-        {
-            text.text = adjacentMines != 0 ? adjacentMines.ToString() : "";
-        }
+        text.text = adjacentMines != 0 ? adjacentMines.ToString() : "";
     }
 
-    private float borderDistance(Vector2 p)
+    private float BorderDistance(Vector2 p)
     {
         float minimum = float.MaxValue;
         for (int i = 0; i < points.Length; i++)
@@ -197,7 +211,7 @@ public class TileController : MonoBehaviour
         UpdateShape();
     }
 
-    private Color applyAccent(Color color, Vector3 accent)
+    private Color ApplyAccent(Color color, Vector3 accent)
     {
         return new Color(
             Mathf.Clamp01(color.r + accent.x),
@@ -216,9 +230,8 @@ public class TileController : MonoBehaviour
         }
 #endif
 
-        shapeRenderer.color = applyAccent(fillColor, fillAccent);
-        shapeRenderer.material.SetFloat("_Strength", 0);
-
+        shapeRenderer.color = ApplyAccent(fillColor, fillAccent);
+        
         borderAccent = Vector3.zero;
         borderController.sortingOrder = 0;
 
@@ -233,38 +246,27 @@ public class TileController : MonoBehaviour
             );
             borderAccent = Vector3.one;
             borderController.sortingOrder = 1;
-            //shapeRenderer.material.SetFloat("_Strength", 1.2f * highlightValue);
-            shapeRenderer.material.SetFloat("_Phase", 10 * (Time.time % (MathF.PI * 2)));
-            
         }
 
         borderController.startColor = shapeRenderer.color;
-        borderController.startColor = applyAccent(borderColor, borderAccent);
+        borderController.startColor = ApplyAccent(borderColor, borderAccent);
         borderController.endColor = borderController.startColor;
     }
 
     void LateUpdate()
     {
-        if (tileDelegate == null || tileDelegate.isPaused()) return;
+        if (tileDelegate == null || tileDelegate.IsPaused()) return;
         if (polygonCollider.OverlapPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition)))
         {
-            if (Input.GetMouseButtonDown(0) ||
-                (PlayerPrefs.GetString("Clear", "UNBOUND") != "UNBOUND" ?
-                    Input.GetKeyDown((KeyCode) Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString("Clear", "C"))) :
-                    false)
-                )
+            if (Input.GetMouseButtonDown(0) || Settings.IsClearBindingPressed())
             {
                 // clear
-                tileDelegate.click(gameObject.GetComponent<TileController>());
+                tileDelegate.Click(this);
             }
-            else if (Input.GetMouseButtonDown(1) ||
-                (PlayerPrefs.GetString("Flag", "UNBOUND") != "UNBOUND" ?
-                    Input.GetKeyDown((KeyCode)Enum.Parse(typeof(KeyCode), PlayerPrefs.GetString("Flag", "F"))) :
-                    false)
-                )
+            else if (Input.GetMouseButtonDown(1) || Settings.IsFlagBindingPressed())
             {
                 // flag
-                tileDelegate.flag(gameObject.GetComponent<TileController>());
+                tileDelegate.Flag(this);
             }
             else
             {
@@ -285,34 +287,60 @@ public class TileController : MonoBehaviour
         //borderController.sortingOrder = 1;
         text.enabled = true;
         cleared = true;
+        if (isMine)
+        {
+            image.DisplayMine();
+        }
     }
 
     public void Flag()
     {
-        fillAccent = new Vector3(1, -1, -1);
+        //fillAccent = new Vector3(1, -1, -1);
         //borderAccent = Vector3.one * 1;
         //borderController.sortingOrder = 2;
         flagged = true;
+        image.DisplayFlag();
     }
 
     public void Unflag()
     {
-        fillAccent = Vector3.zero;
+        //fillAccent = Vector3.zero;
         //borderAccent = Vector3.zero;
         //borderController.sortingOrder = 0;
         flagged = false;
+        image.Hide();
     }
 
     public void ResetValues()
     {
         fillAccent = Vector3.zero;
-        //borderAccent = Vector3.zero;
-        //borderController.sortingOrder = 0;
         flagged = false;
         cleared = false;
         text.enabled = false;
         adjacentMines = 0;
         isMine = false;
         UpdateLabel();
+        image.Hide();
+    }
+
+    public void Reveal()
+    {
+        if (!cleared)
+        {
+            if (isMine && !flagged)
+            {
+                image.DisplayMine();
+            }
+            else if (!isMine && flagged)
+            {
+                image.Hide();
+                fillAccent = new Vector3(1, -1, -1);
+                //text.enabled = true;
+            }
+            else if (!isMine && !flagged)
+            {
+                //text.enabled = true;
+            }
+        }
     }
 }

@@ -1759,6 +1759,7 @@ MonoBehaviour:
   zoomSpeed: 25
   zoomFactor: 2
   board: {fileID: 1076625376}
+  minBoardZoom: 0.05
   maxBoardZoom: 5
   movable: 1
 --- !u!114 &519420038
@@ -7444,7 +7445,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45.7
+  m_fontSize: 45.8
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

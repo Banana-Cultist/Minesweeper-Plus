@@ -3,24 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public interface TileDelegate
+public interface ITileDelegate
 {
-    bool isPaused();
-    void click(TileController tile);
-    void flag(TileController tile);
-    float getLineWidth();
+    bool IsPaused();
+    void Click(TileController tile);
+    void Flag(TileController tile);
+    float GetLineWidth();
 }
 
-public interface BoardTypeDelegate
+public interface IBoardTypeDelegate
 {
-    TileController createTile();
+    TileController CreateTile();
 }
 
-public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
+public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 {
     private RectTransform bounds;
     public GameObject tilePrefab;
-    private List<TileController> tiles = new List<TileController>();
+    private List<TileController> tiles = new();
     public TextMeshProUGUI hud;
     public int minesLeft;
     public int totalMines;
@@ -36,14 +36,14 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         bounds = GetComponent<RectTransform>();
         int w = 25;
         //tiles = GridBoard.initialize(this, w, w, bounds, 135f, 0);
-        tiles = VoronoiBoard.initialize(this, w*w, bounds, 30);
-        placeMines(w * w / 5);
+        tiles = VoronoiBoard.Initialize(this, w*w, bounds, 30);
+        PlaceMines(w * w / 5);
         InitializeBoard();
-        colorBoard();
+        ColorBoard();
         startTime = Time.time;
     }
 
-    public void resetBoard()
+    public void ResetBoard()
     {
         foreach (TileController tile in tiles)
         {
@@ -54,14 +54,14 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         isFirst = true;
         startTime = Time.time;
         paused = false;
-        placeMines(totalMines);
+        PlaceMines(totalMines);
         foreach(TileController tile in tiles)
         {
             tile.UpdateLabel();
         }
     }
 
-    public TileController createTile() {
+    public TileController CreateTile() {
         TileController tile = Instantiate(
             tilePrefab,
             transform.position, //+ new Vector3(-bounds.rect.width / 2, -bounds.rect.height / 2, 0),
@@ -82,15 +82,15 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         }
     }
 
-    private void placeMines(int mines)
+    private void PlaceMines(int mines)
     {
         totalMines = mines;
         minesLeft = mines;
-        List<TileController> available = new List<TileController>(tiles);
-        placeMines(mines, available);
+        List<TileController> available = new(tiles);
+        PlaceMines(mines, available);
     }
 
-    private void placeMines(int mines, TileController clearance)
+    private void PlaceMines(int mines, TileController clearance)
     {
         totalMines = mines;
         minesLeft = mines;
@@ -98,14 +98,14 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         {
             tile.ResetValues();
         }
-        List<TileController> available = new List<TileController>(tiles);
+        List<TileController> available = new(tiles);
         available.Remove(clearance);
         foreach(TileController neighbor in clearance.adjacents)
         {
             available.Remove(neighbor);
         }
 
-        placeMines(mines, available);
+        PlaceMines(mines, available);
 
         foreach(TileController tile in tiles)
         {
@@ -113,7 +113,7 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         }
     }
 
-    private void placeMines(int mines, List<TileController> available)
+    private void PlaceMines(int mines, List<TileController> available)
     {
         for (int i = 0; i < mines; i++)
         {
@@ -127,7 +127,7 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         }
     }
 
-    Color hexcode(string hexcode)
+    private Color Hexcode(string hexcode)
     {
         int r = int.Parse(hexcode.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
         int g = int.Parse(hexcode.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
@@ -136,15 +136,15 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         return new Color(r / den, g / den, b / den, 1);
     }
 
-    void colorBoard()
+    void ColorBoard()
     {
         Color[] colors = new Color[] {
-            hexcode("537c78"),
-            hexcode("7ba591"),
-            hexcode("cc222b"),
-            hexcode("f15b4c"),
-            hexcode("faa41b"),
-            hexcode("ffd45b"),
+            Hexcode("537c78"),
+            Hexcode("7ba591"),
+            Hexcode("cc222b"),
+            Hexcode("f15b4c"),
+            Hexcode("faa41b"),
+            Hexcode("ffd45b"),
         };
 
         // use a biased wave function collapse algorithm to color tiles
@@ -177,6 +177,7 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
                     entropy[potentialColors].Add(tile);
                 }
             }
+
             TileController selected = null;
             for(int j = 0; j < entropy.Length; j++)
             {
@@ -223,18 +224,17 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         
         hud.text = "<color=\"blue\">" + Mathf.RoundToInt(Time.time - startTime) + "</color> / " +
                        "<color=\"red\">" + minesLeft + "</color>";
-        
     }
 
-    public void click(TileController tile)
+    public void Click(TileController tile)
     {
         Debug.Log("Click detected");
 
-        if (PlayerPrefs.GetInt("CleanOpening", 0) == 1 && isFirst)
+        if (Settings.GetToggle(Toggles.CLEAN_OPENING) && isFirst)
         {
-            placeMines(totalMines, tile);
+            PlaceMines(totalMines, tile);
+            isFirst = false;
         }
-        isFirst = false;
 
         if (tile.isMine && !tile.flagged)
         {
@@ -246,24 +246,7 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         {
             if (tile.adjacentMines == 0)
             {
-                HashSet<TileController> visited = new HashSet<TileController>();
-                List<TileController> toClear = new List<TileController> { tile };
-                while (toClear.Count != 0)
-                {
-                    TileController current = toClear[0];
-                    toClear.RemoveAt(0);
-                    visited.Add(current);
-                    current.Unflag();
-                    current.Clear();
-                    cleared++;
-                    if (current.adjacentMines == 0)
-                    {
-                        foreach (TileController neighbor in current.adjacents)
-                        {
-                            if (!neighbor.cleared && !toClear.Contains(neighbor)) toClear.Add(neighbor);
-                        }
-                    }
-                }
+                ClearEmpty(tile);
             }
             else
             {
@@ -271,28 +254,9 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
                 cleared++;
             }
         }
-        else if (!tile.flagged && PlayerPrefs.GetInt("ClearChord", 0) == 1)
+        else if (!tile.flagged && Settings.GetToggle(Toggles.CLEAR_CHORD))
         {
-            int adjacentFlags = 0;
-            List<TileController> nonFlagged = new List<TileController>();
-            foreach (TileController neighbor in tile.adjacents)
-            {
-                if (neighbor.flagged)
-                {
-                    adjacentFlags++;
-                }
-                else if (!neighbor.cleared)
-                {
-                    nonFlagged.Add(neighbor);
-                }
-            }
-            if (adjacentFlags >= tile.adjacentMines)
-            {
-                foreach (TileController nonCleared in nonFlagged)
-                {
-                    click(nonCleared);
-                }
-            }
+            ClearChord(tile);
         }
 
         if (tiles.Count - cleared == totalMines)
@@ -301,29 +265,63 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
         }
     }
 
-    public void flag(TileController tile)
+    private void ClearEmpty(TileController tile)
+    {
+        HashSet<TileController> visited = new();
+        List<TileController> toClear = new() { tile };
+        while (toClear.Count != 0)
+        {
+            TileController current = toClear[0];
+            toClear.RemoveAt(0);
+            visited.Add(current);
+            current.Unflag();
+            current.Clear();
+            cleared++;
+            if (current.adjacentMines == 0)
+            {
+                foreach (TileController neighbor in current.adjacents)
+                {
+                    if (!neighbor.cleared && !toClear.Contains(neighbor)) toClear.Add(neighbor);
+                }
+            }
+        }
+    }
+
+    private void ClearChord(TileController tile)
+    {
+        int adjacentFlags = 0;
+        List<TileController> nonFlagged = new();
+        foreach (TileController neighbor in tile.adjacents)
+        {
+            if (neighbor.flagged)
+            {
+                adjacentFlags++;
+            }
+            else if (!neighbor.cleared)
+            {
+                nonFlagged.Add(neighbor);
+            }
+        }
+
+        if (adjacentFlags >= tile.adjacentMines)
+        {
+            foreach (TileController nonCleared in nonFlagged)
+            {
+                Click(nonCleared);
+            }
+        }
+    }
+
+    public void Flag(TileController tile)
     {
         Debug.Log("Flag detected");
         if (!tile.cleared)
         {
-            if (PlayerPrefs.GetInt("MineSweeping", 0) == 1)
+            if (Settings.GetToggle(Toggles.MINE_SWEEPING))
             {
                 if (tile.isMine)
                 {
-                    tile.isMine = false;
-                    minesLeft--;
-                    cleared--;
-                    tile.UpdateLabel();
-                    foreach (TileController neighbor in tile.adjacents)
-                    {
-                        neighbor.adjacentMines -= 1;
-                        neighbor.UpdateLabel();
-                        if (neighbor.cleared && neighbor.adjacentMines == 0)
-                        {
-                            click(neighbor);
-                        }
-                    }
-                    click(tile);
+                    RemoveMine(tile);
                 }
                 else
                 {
@@ -344,45 +342,76 @@ public class BoardController : MonoBehaviour, TileDelegate, BoardTypeDelegate
                 }
             }
         }
-        else if (PlayerPrefs.GetInt("FlagChord", 0) == 1)
+        else if (Settings.GetToggle(Toggles.FLAG_CHORD))
         {
-            int adjacentNonCleared = 0;
-            List<TileController> nonFlagged = new List<TileController>();
-            foreach (TileController neighbor in tile.adjacents)
+            FlagChord(tile);
+        }
+    }
+
+    private void RemoveMine(TileController tile)
+    {
+        tile.isMine = false;
+        minesLeft--;
+        cleared--;
+        tile.UpdateLabel();
+        foreach (TileController neighbor in tile.adjacents)
+        {
+            neighbor.adjacentMines -= 1;
+            neighbor.UpdateLabel();
+            if (neighbor.cleared && neighbor.adjacentMines == 0)
             {
-                if (!neighbor.cleared)
+                Click(neighbor);
+            }
+        }
+        Click(tile);
+    }
+
+    private void FlagChord(TileController tile)
+    {
+        int adjacentNonCleared = 0;
+        List<TileController> nonFlagged = new();
+        foreach (TileController neighbor in tile.adjacents)
+        {
+            if (!neighbor.cleared)
+            {
+                adjacentNonCleared++;
+                if (!neighbor.flagged)
                 {
-                    adjacentNonCleared++;
-                    if (!neighbor.flagged)
-                    {
-                        nonFlagged.Add(neighbor);
-                    }
+                    nonFlagged.Add(neighbor);
                 }
             }
-            if (adjacentNonCleared <= tile.adjacentMines)
+        }
+        if (adjacentNonCleared <= tile.adjacentMines)
+        {
+            foreach (TileController nonCleared in nonFlagged)
             {
-                foreach (TileController nonCleared in nonFlagged)
+                if (Settings.GetToggle(Toggles.MINE_SWEEPING))
                 {
-                    if (PlayerPrefs.GetInt("MineSweeping", 0) == 1)
-                    {
-                        flag(nonCleared);
-                    }
-                    else
-                    {
-                        nonCleared.Flag();
-                        minesLeft--;
-                    }
+                    Flag(nonCleared);
+                }
+                else
+                {
+                    nonCleared.Flag();
+                    minesLeft--;
                 }
             }
         }
     }
 
-    public bool isPaused()
+    public void Reveal()
+    {
+        foreach (TileController tile in tiles)
+        {
+            tile.Reveal();
+        }
+    }
+
+    public bool IsPaused()
     {
         return paused;
     }
 
-    public float getLineWidth()
+    public float GetLineWidth()
     {
         return bounds.sizeDelta.magnitude / Mathf.Sqrt(tiles.Count) / 20;
     }

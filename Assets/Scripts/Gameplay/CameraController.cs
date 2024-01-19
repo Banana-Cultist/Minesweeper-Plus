@@ -9,6 +9,7 @@ public class CameraController : MonoBehaviour
     public float zoomFactor;
     private float zoomAmount = 0;
     public RectTransform board;
+    public float minBoardZoom;
     public float maxBoardZoom;
 
     private Camera cam;
@@ -43,6 +44,14 @@ public class CameraController : MonoBehaviour
         transform.position = new Vector3(nextX, nextY, transform.position.z);
 
 
+        float minZoom = Mathf.Log(
+            Mathf.Min(
+                board.rect.width / Screen.width * Screen.height,
+                board.rect.height
+            ) * minBoardZoom / 2,
+            zoomFactor
+        );
+
         float maxZoom = Mathf.Log(
             Mathf.Min(
                 board.rect.width / Screen.width * Screen.height,
@@ -51,7 +60,8 @@ public class CameraController : MonoBehaviour
             zoomFactor
         );
 
-        zoomAmount = Mathf.Min(zoomAmount + Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * zoomSpeed, maxZoom);
+        zoomAmount = Mathf.Clamp(zoomAmount + Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * zoomSpeed, minZoom, maxZoom);
+        //zoomAmount = Mathf.Min(zoomAmount + Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime * zoomSpeed, maxZoom);
 
         cam.orthographicSize = Mathf.Pow(zoomFactor, zoomAmount);
     }

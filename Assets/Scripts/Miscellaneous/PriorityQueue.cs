@@ -1,6 +1,4 @@
-﻿using static VoronoiBoard;
-using UnityEngine;
-using System;
+﻿using System;
 
 public class PriorityQueue<T> where T : IComparable
 {
@@ -18,7 +16,7 @@ public class PriorityQueue<T> where T : IComparable
         // insert new value at end of list
         if (size > maxSize / 2)
         {
-            expand();
+            Expand();
         }
         data[size] = value;
         int index = size;
@@ -26,9 +24,7 @@ public class PriorityQueue<T> where T : IComparable
         // swim new value until valid
         while (data[index].CompareTo(data[(index - 1) / 2]) < 0)
         {
-            T temp = data[index];
-            data[index] = data[(index - 1) / 2];
-            data[(index - 1) / 2] = temp;
+            Swap(ref data[(index - 1) / 2], ref data[index]);
             index = (index - 1) / 2;
         }
         size++;
@@ -44,27 +40,20 @@ public class PriorityQueue<T> where T : IComparable
         // sink new root node until valid
         while (true)
         {
-
-            //T? child1 = (index * 2) + 1 < size ? data[(index * 2) + 1] : null;
-            //T? child2 = (index * 2) + 2 < size ? data[(index * 2) + 2] : null;
             int index1 = (index * 2) + 1;
             int index2 = (index * 2) + 2;
-            bool valid1 = index1 >= size || data[index1] == null;
-            bool valid2 = index2 >= size || data[index2] == null;
-            int greatestChildIndex; // = child1.CompareTo(child2) < 0 ? (index * 2) + 1 : (index * 2) + 2;
-            if (valid1 && valid2)
-                break;
-            else if (valid1)
-                greatestChildIndex = index2;
-            else if (valid2)
-                greatestChildIndex = index1;
-            else
-                greatestChildIndex = data[index1].CompareTo(data[index2]) < 0 ? index1 : index2;
+            bool invalid1 = index1 >= size || data[index1] == null;
+            bool invalid2 = index2 >= size || data[index2] == null;
+
+            int greatestChildIndex;
+            if (invalid1 && invalid2) break;
+            if (invalid1) greatestChildIndex = index2;
+            else if (invalid2) greatestChildIndex = index1;
+            else greatestChildIndex = data[index1].CompareTo(data[index2]) < 0 ? index1 : index2;
+
             if (data[index].CompareTo(data[greatestChildIndex]) > 0)
             {
-                T temp = data[index];
-                data[index] = data[greatestChildIndex];
-                data[greatestChildIndex] = temp;
+                Swap(ref data[greatestChildIndex], ref data[index]);
                 index = greatestChildIndex;
             }
             else
@@ -76,9 +65,12 @@ public class PriorityQueue<T> where T : IComparable
         return value;
     }
 
+    private void Swap(ref T a, ref T b)
+    {
+        (a, b) = (b, a);
+    }
 
-
-    public void clear()
+    public void Clear()
     {
         size = 0;
     }
@@ -88,7 +80,7 @@ public class PriorityQueue<T> where T : IComparable
         return size;
     }
 
-    private void expand()
+    private void Expand()
     {
         maxSize *= 2;
         T[] newData = new T[maxSize];

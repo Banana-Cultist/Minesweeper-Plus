@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,7 +18,7 @@ public class KeyBinder : MonoBehaviour
         button = gameObject.GetComponent<Button>();
         buttonText = gameObject.GetComponentInChildren<TMP_Text>();
         button.onClick.RemoveAllListeners();
-        button.onClick.AddListener(beginBinding);
+        button.onClick.AddListener(BeginBinding);
     }
 
     void OnGUI()
@@ -34,19 +32,19 @@ public class KeyBinder : MonoBehaviour
         if (action.isKey && action.type == EventType.KeyDown)
         {
             binding = action.keyCode;
-            updateLabel();
+            UpdateLabel();
             currentlyBinding = false;
             listener();
         } else if (Input.GetMouseButtonDown(0))
         {
             binding = null;
-            updateLabel();
+            UpdateLabel();
             currentlyBinding = false;
             listener();
         }
     }
 
-    private void beginBinding()
+    private void BeginBinding()
     {
         currentlyBinding = true;
     }
@@ -54,10 +52,10 @@ public class KeyBinder : MonoBehaviour
     public void SetBinding(KeyCode? value)
     {
         binding = value;
-        updateLabel();
+        UpdateLabel();
     }
 
-    private void updateLabel()
+    private void UpdateLabel()
     {
         Debug.Log(binding);
         if (binding != null)

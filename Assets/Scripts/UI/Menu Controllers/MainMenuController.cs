@@ -89,6 +89,11 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         menuControllers[2].SetActive(true);
         board.paused = true;
         cameraController.movable = false;
+
+        if (!status)
+        {
+            board.Reveal();
+        }
     }
 
     public void quitButtonPressed()
@@ -119,7 +124,7 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         cameraController.movable = true;
 
         SetAllFalse();
-        board.resetBoard();
+        board.ResetBoard();
     }
 
     public void viewButtonPressed()

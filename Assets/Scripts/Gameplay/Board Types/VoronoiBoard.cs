@@ -2,13 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
-using UnityEngine.Timeline;
-using Unity.VisualScripting;
-using static UnityEngine.EventSystems.EventTrigger;
 
 public static class VoronoiBoard
 {
-    public static List<TileController> initialize(BoardTypeDelegate board, int cells, RectTransform bounds, int relaxation)
+    public static List<TileController> Initialize(IBoardTypeDelegate board, int cells, RectTransform bounds, int relaxation)
 	{
         // Initialize Sites
         float borderMargin = 0.025f;
@@ -23,7 +20,7 @@ public static class VoronoiBoard
         // Sweeps board from bottom to top
         for (int i = 0; i < cells; i++)
 		{
-            decimal2 site = new decimal2(
+            Decimal2 site = new(
                 (decimal) UnityEngine.Random.Range(
                     bounds.rect.xMin + bounds.rect.width * borderMargin,
                     bounds.rect.xMax - bounds.rect.width * borderMargin),
@@ -56,27 +53,27 @@ public static class VoronoiBoard
             //sitePoint.UpdateLabel();
         }
 
-        List<List<decimal2>> diagram = new();
+        List<List<Decimal2>> diagram = new();
         for (int i = 0; i <= relaxation; i++)
         {
             List<VoronoiEdge> edges = new();
-            decimal sweepLine = 0;
+            decimal sweepLine;
             VoronoiArc beachRoot = null;
             while (events.Length() > 0)
             {
                 VoronoiEvent e = events.Pull();
                 if (!e.valid) continue;
-                sweepLine = (decimal) e.point.y;
+                sweepLine = e.point.y;
                 if (e.isSiteEvent)
                 {
-                    handleSite(e.point, ref beachRoot, sweepLine, events, sites);
+                    HandleSite(e.point, ref beachRoot, sweepLine, events, sites);
                 }
                 else
                 {
-                    handleCircle(e, events, sweepLine, edges, beachRoot, sites);
+                    HandleCircle(e, events, sweepLine, edges, beachRoot, sites);
                 }
             }
-            finishEdges(beachRoot, bounds.rect, edges);
+            FinishEdges(beachRoot, bounds.rect, edges);
             foreach (VoronoiEdge edge in edges)
             {
                 if (edge.twin != null)
@@ -95,13 +92,13 @@ public static class VoronoiBoard
                 //tiles.Add(edgeTile);
             }
 
-            diagram = processCells(sites, bounds.rect);
+            diagram = ProcessCells(sites, bounds.rect);
             sites.Clear();
-            events.clear();
-            foreach (List<decimal2> cell in diagram)
+            events.Clear();
+            foreach (List<Decimal2> cell in diagram)
             {
-                decimal2 centroid = decimal2.zero;
-                foreach (decimal2 vertex in cell)
+                Decimal2 centroid = Decimal2.zero;
+                foreach (Decimal2 vertex in cell)
                 {
                     centroid += vertex;
                 }
@@ -118,14 +115,14 @@ public static class VoronoiBoard
 
         List<TileController> tiles = new();
         Hashtable tilePoints = new();
-        foreach (List<decimal2> cell in diagram)
+        foreach (List<Decimal2> cell in diagram)
         {
-            TileController tile = board.createTile();
+            TileController tile = board.CreateTile();
 
             tile.points = new Vector2[cell.Count];
             for (int i = 0; i < cell.Count; i++)
             {
-                tile.points[i] = cell[i].toVector2();
+                tile.points[i] = cell[i].ToVector2();
             }
 
             tile.fillColor = Color.HSVToRGB(0, 0, 0.25f);
@@ -164,28 +161,28 @@ public static class VoronoiBoard
         return tiles;
 	}
 
-    private static List<List<decimal2>> processCells(Hashtable sites, Rect bounds)
+    private static List<List<Decimal2>> ProcessCells(Hashtable sites, Rect bounds)
     {
-        List<List<decimal2>> cells = new();
+        List<List<Decimal2>> cells = new();
         foreach (List<VoronoiEdge> entry in sites.Values)
         {
-            HashSet<decimal2> points = new();
+            HashSet<Decimal2> points = new();
             foreach (VoronoiEdge edge in entry)
             {
                 points.Add(edge.start);
                 points.Add(edge.end);
             }
 
-            List<decimal2> tile = new(points);
-            cwSort(ref tile);
-            clipTile(ref tile, bounds);
+            List<Decimal2> tile = new(points);
+            CwSort(ref tile);
+            ClipTile(ref tile, bounds);
             cells.Add(tile);
         }
 
         return cells;
     }
 
-    private static void finishEdges(VoronoiArc arc, Rect bounds, List<VoronoiEdge> edges)
+    private static void FinishEdges(VoronoiArc arc, Rect bounds, List<VoronoiEdge> edges)
     {
         if (!arc.isVertex)
         {
@@ -215,25 +212,25 @@ public static class VoronoiBoard
                 }
                 x = (y - arc.edge.yPos) / arc.edge.slope;
             }
-            arc.edge.end = new decimal2(x, y);
+            arc.edge.end = new Decimal2(x, y);
 
             edges.Add(arc.edge);
         }
 
-        finishEdges(arc.leftChild, bounds, edges);
-        finishEdges(arc.rightChild, bounds, edges);
+        FinishEdges(arc.leftChild, bounds, edges);
+        FinishEdges(arc.rightChild, bounds, edges);
     }
 
-    private static void cwSort(ref List<decimal2> vertices)
+    private static void CwSort(ref List<Decimal2> vertices)
     {
-        decimal2 center = decimal2.zero;
-        foreach (decimal2 vertice in vertices)
+        Decimal2 center = Decimal2.zero;
+        foreach (Decimal2 vertice in vertices)
         {
             center += vertice;
         }
         center /= vertices.Count;
 
-        vertices.Sort((decimal2 a, decimal2 b) =>
+        vertices.Sort((Decimal2 a, Decimal2 b) =>
         {
             if (a.x - center.x >= 0 && b.x - center.x < 0)
                 return 1;
@@ -261,38 +258,41 @@ public static class VoronoiBoard
         });
     }
 
-    private static void clipTile(ref List<decimal2> vertices, Rect bounds)
+    private static void ClipTile(ref List<Decimal2> vertices, Rect bounds)
     {
-        List<decimal2> clipper = new() {
-            new decimal2(bounds.xMax, bounds.yMax),
-            new decimal2(bounds.xMax, bounds.yMin),
-            new decimal2(bounds.xMin, bounds.yMin),
-            new decimal2(bounds.xMin, bounds.yMax)
+        List<Decimal2> clipper = new() {
+            new Decimal2(bounds.xMax, bounds.yMax),
+            new Decimal2(bounds.xMax, bounds.yMin),
+            new Decimal2(bounds.xMin, bounds.yMin),
+            new Decimal2(bounds.xMin, bounds.yMax)
         };
         for (int i = 0; i < clipper.Count; i++)
         {
-            decimal2 clipperStart = clipper[i];
-            decimal2 clipperEnd = clipper[(i + 1) % clipper.Count];
-            List<decimal2> clippedVertices = new();
+            Decimal2 clipperStart = clipper[i];
+            Decimal2 clipperEnd = clipper[(i + 1) % clipper.Count];
+            List<Decimal2> clippedVertices = new();
             for(int j = 0; j < vertices.Count; j++)
             {
-                decimal2 polyStart = vertices[j];
-                decimal2 polyEnd = vertices[(j + 1) % vertices.Count];
+                Decimal2 polyStart = vertices[j];
+                Decimal2 polyEnd = vertices[(j + 1) % vertices.Count];
                 decimal startPos = (clipperEnd.x - clipperStart.x) * (polyStart.y - clipperStart.y) -
                     (clipperEnd.y - clipperStart.y) * (polyStart.x - clipperStart.x);
                 decimal endPos = (clipperEnd.x - clipperStart.x) * (polyEnd.y - clipperStart.y) -
                     (clipperEnd.y - clipperStart.y) * (polyEnd.x - clipperStart.x);
+
                 // both points inside clipping line
                 if (startPos < 0 && endPos < 0)
                 {
                     clippedVertices.Add(polyEnd);
                     continue;
                 }
+
                 // both points outside of clipping line
                 else if (startPos >= 0 && endPos >= 0)
                 {
                     continue;
                 }
+
                 decimal numX = (clipperStart.x * clipperEnd.y - clipperStart.y * clipperEnd.x) *
                     (polyStart.x - polyEnd.x) - (clipperStart.x - clipperEnd.x) *
                     (polyStart.x * polyEnd.y - polyStart.y * polyEnd.x);
@@ -301,7 +301,7 @@ public static class VoronoiBoard
                     (polyStart.x * polyEnd.y - polyStart.y * polyEnd.x);
                 decimal den = (clipperStart.x - clipperEnd.x) * (polyStart.y - polyEnd.y) -
                     (clipperStart.y - clipperEnd.y) * (polyStart.x - polyEnd.x);
-                decimal2 intersection = new decimal2(numX / den, numY / den);
+                Decimal2 intersection = new(numX / den, numY / den);
                 clippedVertices.Add(intersection);
                 if (startPos >= 0 && endPos < 0) clippedVertices.Add(polyEnd);
             }
@@ -310,7 +310,7 @@ public static class VoronoiBoard
     }
 
     // processes site event
-    private static void handleSite(decimal2 p, ref VoronoiArc beachRoot, decimal sweepLine, PriorityQueue<VoronoiEvent> events, Hashtable sites)
+    private static void HandleSite(Decimal2 p, ref VoronoiArc beachRoot, decimal sweepLine, PriorityQueue<VoronoiEvent> events, Hashtable sites)
     {
         // base case
         if (beachRoot == null)
@@ -324,14 +324,14 @@ public static class VoronoiBoard
         }
 
         // find parabola on beach line right above p
-        VoronoiArc par = getParabolaByX(p.x, sweepLine, beachRoot);
+        VoronoiArc par = GetParabolaByX(p.x, sweepLine, beachRoot);
         if (par.circleEvent != null) par.circleEvent.valid = false;
 
 
         // create new dangling edge; bisects parabola focus and p
-        decimal2 start = new decimal2(p.x, getY(par.point, p.x, sweepLine));
-        VoronoiEdge el = new VoronoiEdge(start, par.point, p);
-        VoronoiEdge er = new VoronoiEdge(start, p, par.point);
+        Decimal2 start = new(p.x, GetY(par.point, p.x, sweepLine));
+        VoronoiEdge el = new(start, par.point, p);
+        VoronoiEdge er = new(start, p, par.point);
         el.twin = er;
 		er.twin = el;
 		par.edge = el;
@@ -357,29 +357,29 @@ public static class VoronoiBoard
             isVertex = false
         };
 
-        par.setLeftChild(p0);
-		par.setRightChild(new() {
+        par.SetLeftChild(p0);
+		par.SetRightChild(new() {
             isVertex = true
         });
 		par.rightChild.edge = er;
-        par.rightChild.setLeftChild(p1);
-		par.rightChild.setRightChild(p2);
+        par.rightChild.SetLeftChild(p1);
+		par.rightChild.SetRightChild(p2);
 
-		checkCircleEvent(p0, sweepLine, events);
-        checkCircleEvent(p2, sweepLine, events);
+		CheckCircleEvent(p0, sweepLine, events);
+        CheckCircleEvent(p2, sweepLine, events);
     }
 
     // process circle event
-    private static void handleCircle(VoronoiEvent e, PriorityQueue<VoronoiEvent> events, decimal sweepLine, List<VoronoiEdge> edges, VoronoiArc beachRoot, Hashtable sites)
+    private static void HandleCircle(VoronoiEvent e, PriorityQueue<VoronoiEvent> events, decimal sweepLine, List<VoronoiEdge> edges, VoronoiArc beachRoot, Hashtable sites)
     {
         if (!e.valid) return;
 
         // find p0, p1, p2 that generate this event from left to right
         VoronoiArc p1 = e.arc;
-        VoronoiArc xl = VoronoiArc.getLeftParent(p1);
-        VoronoiArc xr = VoronoiArc.getRightParent(p1);
-        VoronoiArc p0 = VoronoiArc.getLeftChild(xl);
-        VoronoiArc p2 = VoronoiArc.getRightChild(xr);
+        VoronoiArc xl = VoronoiArc.GetLeftParent(p1);
+        VoronoiArc xr = VoronoiArc.GetRightParent(p1);
+        VoronoiArc p0 = VoronoiArc.GetLeftChild(xl);
+        VoronoiArc p2 = VoronoiArc.GetRightChild(xr);
 
         // remove associated events since the points will be altered
         if (p0.circleEvent != null)
@@ -391,7 +391,7 @@ public static class VoronoiBoard
             p2.circleEvent.valid = false;
         }
 
-        decimal2 p = new(e.point.x, getY(p1.point, e.point.x, sweepLine)); // new vertex
+        Decimal2 p = new(e.point.x, GetY(p1.point, e.point.x, sweepLine)); // new vertex
 
         // end edges!
         xl.edge.end = p;
@@ -418,39 +418,39 @@ public static class VoronoiBoard
         VoronoiArc gparent = p1.parent.parent;
         if (p1.parent.leftChild == p1)
         {
-            if (gparent.leftChild == p1.parent) gparent.setLeftChild(p1.parent.rightChild);
-            if (gparent.rightChild == p1.parent) gparent.setRightChild(p1.parent.rightChild);
+            if (gparent.leftChild == p1.parent) gparent.SetLeftChild(p1.parent.rightChild);
+            if (gparent.rightChild == p1.parent) gparent.SetRightChild(p1.parent.rightChild);
         }
         else
         {
-            if (gparent.leftChild == p1.parent) gparent.setLeftChild(p1.parent.leftChild);
-            if (gparent.rightChild == p1.parent) gparent.setRightChild(p1.parent.leftChild);
+            if (gparent.leftChild == p1.parent) gparent.SetLeftChild(p1.parent.leftChild);
+            if (gparent.rightChild == p1.parent) gparent.SetRightChild(p1.parent.leftChild);
         }
 
         e.arc.parent = null;
         e.arc = null;
 
-        checkCircleEvent(p0, sweepLine, events);
-        checkCircleEvent(p2, sweepLine, events);
+        CheckCircleEvent(p0, sweepLine, events);
+        CheckCircleEvent(p2, sweepLine, events);
 	}
 
     // adds circle event if foci a, b, c lie on the same circle
-    private static void checkCircleEvent(VoronoiArc b, decimal sweepLine, PriorityQueue<VoronoiEvent> events)
+    private static void CheckCircleEvent(VoronoiArc b, decimal sweepLine, PriorityQueue<VoronoiEvent> events)
     {
-        VoronoiArc lp = VoronoiArc.getLeftParent(b);
-        VoronoiArc rp = VoronoiArc.getRightParent(b);
+        VoronoiArc lp = VoronoiArc.GetLeftParent(b);
+        VoronoiArc rp = VoronoiArc.GetRightParent(b);
 
         if (lp == null || rp == null) return;
 
-        VoronoiArc a = VoronoiArc.getLeftChild(lp);
-        VoronoiArc c = VoronoiArc.getRightChild(rp);
+        VoronoiArc a = VoronoiArc.GetLeftChild(lp);
+        VoronoiArc c = VoronoiArc.GetRightChild(rp);
 
         if (a == null || c == null || a.point == c.point) return;
 
-        if (ccw(a.point, b.point, c.point) != 1) return;
+        if (Ccw(a.point, b.point, c.point) != 1) return;
 
         // edges will intersect to form a vertex for a circle event
-        decimal2 start = (decimal2) getEdgeIntersection(lp.edge, rp.edge);
+        Decimal2 start = GetEdgeIntersection(lp.edge, rp.edge);
         if (start == null) return;
 
         // compute radius
@@ -458,13 +458,11 @@ public static class VoronoiBoard
         decimal dy = b.point.y - start.y;
         decimal d = Sqrt((dx * dx) + (dy * dy));
         if (start.y + d < sweepLine) return; // must be after sweep line
-
-
-        decimal2 ep = new(start.x, start.y + d);
+        
         // add circle event
         VoronoiEvent e = new()
         {
-            point = ep,
+            point = new(start.x, start.y + d),
             isSiteEvent = false,
             arc = b
         };
@@ -473,7 +471,7 @@ public static class VoronoiBoard
 	}
 
     // returns intersection of the lines of with vectors a and b
-    private static decimal2? getEdgeIntersection(VoronoiEdge a, VoronoiEdge b)
+    private static Decimal2? GetEdgeIntersection(VoronoiEdge a, VoronoiEdge b)
     {
 
         if (b.slope == a.slope && b.yPos != a.yPos)
@@ -484,10 +482,10 @@ public static class VoronoiBoard
         decimal x = (b.yPos - a.yPos) / (a.slope - b.slope);
         decimal y = (a.slope * x) + a.yPos;
 
-        return new decimal2(x, y);
+        return new Decimal2(x, y);
     }
 
-    private static int ccw(decimal2 a, decimal2 b, decimal2 c)
+    private static int Ccw(Decimal2 a, Decimal2 b, Decimal2 c)
     {
         decimal area2 = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
         if (area2 < 0) return -1;
@@ -496,15 +494,15 @@ public static class VoronoiBoard
     }
 
     // returns current x-coordinate of an unfinished edge
-    private static decimal getXofEdge(VoronoiArc par, decimal sweepLine)
+    private static decimal GetXofEdge(VoronoiArc par, decimal sweepLine)
     {
         //find intersection of two parabolas
 
-        VoronoiArc left = VoronoiArc.getLeftChild(par);
-        VoronoiArc right = VoronoiArc.getRightChild(par);
+        VoronoiArc left = VoronoiArc.GetLeftChild(par);
+        VoronoiArc right = VoronoiArc.GetRightChild(par);
 
-        decimal2 p = left.point;
-        decimal2 r = right.point;
+        Decimal2 p = left.point;
+        Decimal2 r = right.point;
 
         decimal dp = 2 * (p.y - sweepLine);
         decimal a1 = 1 / dp;
@@ -532,13 +530,13 @@ public static class VoronoiBoard
     }
 
     // returns parabola above this x coordinate in the beach line
-    private static VoronoiArc getParabolaByX(decimal xx, decimal sweepLine, VoronoiArc beachLineRoot)
+    private static VoronoiArc GetParabolaByX(decimal xx, decimal sweepLine, VoronoiArc beachLineRoot)
     {
         VoronoiArc par = beachLineRoot;
         decimal x;
         while (par.isVertex)
         {
-            x = getXofEdge(par, sweepLine);
+            x = GetXofEdge(par, sweepLine);
             if (x > xx) par = par.leftChild;
             else par = par.rightChild;
         }
@@ -546,7 +544,7 @@ public static class VoronoiBoard
     }
 
     // find corresponding y-coordinate to x on parabola with focus p
-    private static decimal getY(decimal2 p, decimal x, decimal sweep)
+    private static decimal GetY(Decimal2 p, decimal x, decimal sweep)
     {
         // determine equation for parabola around focus p
         decimal dp = 2 * (p.y - sweep);
@@ -559,86 +557,68 @@ public static class VoronoiBoard
     public class VoronoiEvent : IComparable
     {
 		public bool isSiteEvent;
-        public decimal2 point;
+        public Decimal2 point;
 		public VoronoiArc arc;
 		public bool valid = true;
 
         public int CompareTo(object obj)
         {
 			VoronoiEvent other = (VoronoiEvent) obj;
-			if (point.y > other.point.y)
-			{
-				return 1;
-			}
-			else if (point.y < other.point.y)
-			{
-				return -1;
-			}
-			else
-			{
-                if (point.x > other.point.x)
-                {
-                    return 1;
-                }
-                else if (point.x < other.point.x)
-                {
-                    return -1;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
+            if (point.y > other.point.y) return 1;
+            if (point.y < other.point.y) return -1;
+            if (point.x > other.point.x) return 1;
+            if (point.x < other.point.x) return -1;
+            return 0;
         }
     }
 
 	public class VoronoiEdge
 	{
-		public decimal2 start, leftSite, rightSite, direction;
-		public decimal2? end;
+		public Decimal2 start, leftSite, rightSite, direction;
+		public Decimal2? end;
 
 		public VoronoiEdge twin;
 
 		public decimal slope, yPos;
 
-        public VoronoiEdge(decimal2 first, decimal2 left, decimal2 right)
+        public VoronoiEdge(Decimal2 first, Decimal2 left, Decimal2 right)
         {
             start = first;
             leftSite = left;
             rightSite = right;
-            direction = new decimal2(right.y - left.y, -(right.x - left.x));
+            direction = new(right.y - left.y, -(right.x - left.x));
             end = null;
             slope = (right.x - left.x) / (left.y - right.y);
-            decimal2 mid = new decimal2((right.x + left.x) / 2, (left.y + right.y) / 2);
+            Decimal2 mid = new((right.x + left.x) / 2, (left.y + right.y) / 2);
             yPos = mid.y - slope * mid.x;
         }
     }
 
 	public class VoronoiArc
 	{
-		public decimal2 point;
+		public Decimal2 point;
 		public VoronoiEdge edge;
 		public bool isVertex;
 		public VoronoiEvent circleEvent;
-
 		public VoronoiArc parent, leftChild, rightChild;
 
-		public void setLeftChild(VoronoiArc p)
+		public void SetLeftChild(VoronoiArc p)
 		{
 			leftChild = p;
 			p.parent = this;
 		}
 
-        public void setRightChild(VoronoiArc p)
+        public void SetRightChild(VoronoiArc p)
         {
             rightChild = p;
             p.parent = this;
         }
 
-		public static VoronoiArc getLeftParent(VoronoiArc p)
+		public static VoronoiArc GetLeftParent(VoronoiArc p)
 		{
 			VoronoiArc parent = p.parent;
 			if (parent == null) return null;
+
 			// retrieves highest order left parent
 			VoronoiArc last = p;
 			while (parent.leftChild == last)
@@ -650,11 +630,12 @@ public static class VoronoiBoard
 			return parent;
 		}
 
-        public static VoronoiArc getRightParent(VoronoiArc p)
+        public static VoronoiArc GetRightParent(VoronoiArc p)
         {
             VoronoiArc parent = p.parent;
             if (parent == null) return null;
             VoronoiArc last = p;
+
             // retrieves highest order right parent
             while (parent.rightChild == last)
             {
@@ -665,7 +646,7 @@ public static class VoronoiBoard
             return parent;
         }
 
-		public static VoronoiArc getLeftChild(VoronoiArc p)
+		public static VoronoiArc GetLeftChild(VoronoiArc p)
 		{
 			if (p == null) return null;
 			VoronoiArc child = p.leftChild;
@@ -676,7 +657,7 @@ public static class VoronoiBoard
 			return child;
 		}
 
-        public static VoronoiArc getRightChild(VoronoiArc p)
+        public static VoronoiArc GetRightChild(VoronoiArc p)
         {
             if (p == null) return null;
             VoronoiArc child = p.rightChild;
@@ -687,65 +668,64 @@ public static class VoronoiBoard
             return child;
         }
 
-		public static VoronoiArc getLeft(VoronoiArc p)
+		public static VoronoiArc GetLeft(VoronoiArc p)
 		{
-			return getLeftChild(getLeftParent(p));
+			return GetLeftChild(GetLeftParent(p));
 		}
 
-        public static VoronoiArc getRight(VoronoiArc p)
+        public static VoronoiArc GetRight(VoronoiArc p)
         {
-            return getRightChild(getRightParent(p));
+            return GetRightChild(GetRightParent(p));
         }
     }
 
     public static decimal Sqrt(decimal x, decimal? guess = null)
     {
-        var ourGuess = guess.GetValueOrDefault(x / 2m);
-        var result = x / ourGuess;
-        var average = (ourGuess + result) / 2m;
+        decimal ourGuess = guess.GetValueOrDefault(x / 2m);
+        decimal result = x / ourGuess;
+        decimal average = (ourGuess + result) / 2m;
 
         if (average == ourGuess) // This checks for the maximum precision possible with a decimal.
             return average;
         else
             return Sqrt(x, average);
     }
-
 }
 
-public class decimal2
+public class Decimal2
 {
     public decimal x, y;
-    public static decimal2 zero = new decimal2(0m, 0m);
+    public static Decimal2 zero = new(0m, 0m);
 
-    public decimal2(decimal x, decimal y)
+    public Decimal2(decimal x, decimal y)
     {
         this.x = x;
         this.y = y;
     }
-    public decimal2(float x, float y)
+    public Decimal2(float x, float y)
     {
         this.x = (decimal) x;
         this.y = (decimal) y;
     }
 
-    public decimal2(Vector2 v)
+    public Decimal2(Vector2 v)
     {
-        this.x = (decimal) v.x;
-        this.y = (decimal) v.y;
+        x = (decimal) v.x;
+        y = (decimal) v.y;
     }
 
-    public Vector2 toVector2()
+    public Vector2 ToVector2()
     {
         return new Vector2((float) x, (float) y);
     }
 
-    public static decimal2 operator +(decimal2 a, decimal2 b)
+    public static Decimal2 operator +(Decimal2 a, Decimal2 b)
     {
-        return new decimal2(a.x + b.x, a.y + b.y);
+        return new Decimal2(a.x + b.x, a.y + b.y);
     }
 
-    public static decimal2 operator /(decimal2 a, decimal b)
+    public static Decimal2 operator /(Decimal2 a, decimal b)
     {
-        return new decimal2(a.x / b, a.y / b);
+        return new Decimal2(a.x / b, a.y / b);
     }
 }

@@ -35,10 +35,10 @@ public class ButtonToggle : MonoBehaviour
     public void SetState(bool value)
     {
         state = value;
-        updateLabel();
+        UpdateLabel();
     }
 
-    private void updateLabel()
+    private void UpdateLabel()
     {
         buttonText.text = state ? "Enabled" : "Disabled";
     }
