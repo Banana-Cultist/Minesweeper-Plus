@@ -238,7 +238,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
         if (tile.isMine && !tile.flagged)
         {
-            menuDelegate.gameCompleted(false);
+            menuDelegate.GameCompleted(false);
             return;
         }
 
@@ -261,7 +261,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
         if (tiles.Count - cleared == totalMines)
         {
-            menuDelegate.gameCompleted(true);
+            menuDelegate.GameCompleted(true);
         }
     }
 
@@ -325,7 +325,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
                 }
                 else
                 {
-                    menuDelegate.gameCompleted(false);
+                    menuDelegate.GameCompleted(false);
                 }
             }
             else

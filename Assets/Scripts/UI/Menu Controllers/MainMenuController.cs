@@ -4,21 +4,21 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public interface PauseDelegate {
-    void resumeButtonPressed();
-    void settingsButtonPressed();
-    void quitButtonPressed();
+    void ResumeButtonPressed();
+    void SettingsButtonPressed();
+    void QuitButtonPressed();
 }
 
 public interface GameoverDelegate
 {
-    void restartButtonPressed();
-    void quitButtonPressed();
-    void viewButtonPressed();
+    void RestartButtonPressed();
+    void QuitButtonPressed();
+    void ViewButtonPressed();
 }
 
 public interface BoardDelegate
 {
-    void gameCompleted(bool status);
+    void GameCompleted(bool status);
 }
 
 public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, GameoverDelegate
@@ -48,15 +48,15 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         }
         else if (state == MenuState.PAUSE && Input.GetKeyDown(KeyCode.Escape))
         {
-            resumeButtonPressed();
+            ResumeButtonPressed();
         }
         else if (state == MenuState.SETTINGS && Input.GetKeyDown(KeyCode.Escape))
         {
-            resumeButtonPressed();
+            ResumeButtonPressed();
         }
         else if (state == MenuState.GAMEOVER && Input.GetKeyDown(KeyCode.Escape))
         {
-            viewButtonPressed();
+            ViewButtonPressed();
         }
         else if (state == MenuState.POSTVIEW && Input.GetKeyDown(KeyCode.Escape))
         {
@@ -83,7 +83,7 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         }
     }
 
-    public void gameCompleted(bool status)
+    public void GameCompleted(bool status)
     {
         state = MenuState.GAMEOVER;
         menuControllers[2].SetActive(true);
@@ -96,12 +96,12 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         }
     }
 
-    public void quitButtonPressed()
+    public void QuitButtonPressed()
     {
         Debug.Log("Quit Button Pressed");
     }
 
-    public void resumeButtonPressed()
+    public void ResumeButtonPressed()
     {
         state = MenuState.PLAYING;
         board.paused = false;
@@ -109,7 +109,7 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         SetAllFalse();
     }
 
-    public void settingsButtonPressed()
+    public void SettingsButtonPressed()
     {
         Debug.Log("Settings Button Pressed");
         state = MenuState.SETTINGS;
@@ -117,7 +117,7 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         menuControllers[1].SetActive(true);
     }
 
-    public void restartButtonPressed()
+    public void RestartButtonPressed()
     {
         state = MenuState.PLAYING;
         board.paused = false;
@@ -127,7 +127,7 @@ public class MainMenuController : MonoBehaviour, PauseDelegate, BoardDelegate, G
         board.ResetBoard();
     }
 
-    public void viewButtonPressed()
+    public void ViewButtonPressed()
     {
         state = MenuState.POSTVIEW;
         cameraController.movable = true;

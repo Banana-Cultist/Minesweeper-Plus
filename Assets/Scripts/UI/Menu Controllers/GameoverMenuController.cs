@@ -15,9 +15,9 @@ public class GameoverMenuController : MenuController
     public override void SetDelegate(MonoBehaviour value)
     {
         gameoverDelegate = value as GameoverDelegate;
-        restartButton.onClick.AddListener(gameoverDelegate.restartButtonPressed);
-        quitButton.onClick.AddListener(gameoverDelegate.quitButtonPressed);
-        viewButton.onClick.AddListener(gameoverDelegate.viewButtonPressed);
+        restartButton.onClick.AddListener(gameoverDelegate.RestartButtonPressed);
+        quitButton.onClick.AddListener(gameoverDelegate.QuitButtonPressed);
+        viewButton.onClick.AddListener(gameoverDelegate.ViewButtonPressed);
     }
 
     // Start is called before the first frame update

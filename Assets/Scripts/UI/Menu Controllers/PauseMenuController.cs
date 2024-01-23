@@ -15,8 +15,8 @@ public class PauseMenuController : MenuController
     public override void SetDelegate(MonoBehaviour value)
     {
         pauseDelegate = value as PauseDelegate;
-        resumeButton.onClick.AddListener(pauseDelegate.resumeButtonPressed);
-        settingsButton.onClick.AddListener(pauseDelegate.settingsButtonPressed);
-        quitButton.onClick.AddListener(pauseDelegate.quitButtonPressed);
+        resumeButton.onClick.AddListener(pauseDelegate.ResumeButtonPressed);
+        settingsButton.onClick.AddListener(pauseDelegate.SettingsButtonPressed);
+        quitButton.onClick.AddListener(pauseDelegate.QuitButtonPressed);
     }
 }
