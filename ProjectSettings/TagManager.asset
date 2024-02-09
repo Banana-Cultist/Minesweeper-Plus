@@ -41,6 +41,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Flag
+    uniqueID: 542691183
+    locked: 0
+  - name: Cover
+    uniqueID: 923695993
+    locked: 0
   - name: Border
     uniqueID: 2016100421
     locked: 0

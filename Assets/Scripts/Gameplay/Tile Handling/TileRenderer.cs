@@ -6,8 +6,13 @@ using UnityEngine;
 using UnityEngine.U2D;
 using static TileController;
 
-public class TileRenderer : MonoBehaviour {    
-    public PolygonCollider2D polygonCollider;
+[ExecuteInEditMode]
+public class TileRenderer : MonoBehaviour
+{
+    //public PolygonCollider2D polygonCollider;
+
+    public GameObject cover;
+    public GameObject fill;
 
     public SpriteShapeRenderer coverRenderer;
     public SpriteShapeController coverController;
@@ -21,11 +26,11 @@ public class TileRenderer : MonoBehaviour {
     private Color coverColor;
     private Color fillColor;
     private Color borderColor;
-    
+
     public void SetPoints(Vector2[] points)
     {
         // Adjust collider
-        polygonCollider.SetPath(0, points);
+        //polygonCollider.SetPath(0, points);
 
         // Adjust sprite shape controllers
         coverController.spline.Clear();
@@ -72,7 +77,7 @@ public class TileRenderer : MonoBehaviour {
             {
                 next /= 2;
                 current /= 2;
-                
+
                 //int pivotIndex = borderPoints.IndexOf(pivot);
                 //if (pivotIndex == -1) Debug.Log(calculated);
                 //Debug.Log(calculated);
@@ -82,7 +87,7 @@ public class TileRenderer : MonoBehaviour {
             }
             offset += borderQuality * 2;
         }
-        
+
 
         return borderPoints;
     }
@@ -108,10 +113,10 @@ public class TileRenderer : MonoBehaviour {
 
     public void SetHighlight(TileController.Highlight highlight)
     {
-        switch(highlight)
+        switch (highlight)
         {
-            case TileController.Highlight.Selected:
-            case TileController.Highlight.Adjacent:
+            case Highlight.Selected:
+            case Highlight.Adjacent:
                 float highlightValue = 0.75f * (highlight == Highlight.Adjacent ? 0.5f : 1);
                 fillRenderer.color = GetHighlightColor(fillColor, highlightValue);
                 coverRenderer.color = GetHighlightColor(coverColor, highlightValue);
@@ -119,7 +124,7 @@ public class TileRenderer : MonoBehaviour {
                 borderController.endColor = borderController.startColor;
                 borderController.sortingOrder = 1;
                 break;
-            case TileController.Highlight.None:
+            case Highlight.None:
                 fillRenderer.color = fillColor;
                 coverRenderer.color = coverColor;
                 borderController.startColor = borderColor;
@@ -142,15 +147,5 @@ public class TileRenderer : MonoBehaviour {
     {
         borderController.startWidth = width;
         borderController.endWidth = width;
-    }
-
-    public Bounds GetBounds()
-    {
-        return polygonCollider.bounds;
-    }
-
-    public bool Contains(Vector2 point)
-    {
-        return polygonCollider.OverlapPoint(point);
     }
 }

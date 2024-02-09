@@ -3,28 +3,34 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class TileIcon : MonoBehaviour
+public interface IFlagAnimatorDelegate
+{
+    void AnimationCompleted(bool revealed);
+}
+
+[ExecuteInEditMode]
+public class TileIcon : MonoBehaviour, IFlagAnimatorDelegate
 {
 	public SpriteRenderer mineSprite;
 	public SpriteRenderer flagSprite;
+    public FlagAnimator flagAnimator;
     public TextMeshPro numberText;
 
     public void Awake()
     {
 		mineSprite.enabled = false;
 		flagSprite.enabled = false;
+        flagAnimator.flagDelegate = this;
     }
 
-
-	public void Resize(Vector2[] points, TileRenderer tileRenderer)
+	public void Resize(Vector2[] points, Bounds bounds)
 	{
         int maxMisses = 10;
         float decayConstant = 2.8284f;
         float target = 1E-3f;
         int count = 0;
 
-        Bounds bounds = tileRenderer.GetBounds();
-        Vector2 center = tileRenderer.Contains(bounds.center) ? bounds.center : points[0];
+        Vector2 center = TileController.Contains(points, bounds.center) ? bounds.center : points[0];
         float accuracy = float.MaxValue;
         do
         {
@@ -36,7 +42,7 @@ public class TileIcon : MonoBehaviour
                     UnityEngine.Random.Range(bounds.min.y, bounds.max.y)
                 );
                 if (BorderDistance(points, random) > BorderDistance(points, center) &&
-                    random != center && tileRenderer.Contains(random))
+                    random != center && TileController.Contains(points, random))
                 {
                     center = random;
                     misses = 0;
@@ -67,6 +73,8 @@ public class TileIcon : MonoBehaviour
 
         numberText.rectTransform.sizeDelta = newSizeDelta;
         numberText.rectTransform.localPosition = newPosition;
+
+        flagAnimator.Resize(newSizeDelta, newPosition);
     }
 
     private float BorderDistance(Vector2[] points, Vector2 p)
@@ -104,13 +112,15 @@ public class TileIcon : MonoBehaviour
 
 	public void ShowFlag()
 	{
-        mineSprite.enabled = false;
         flagSprite.enabled = true;
+        flagSprite.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+        flagAnimator.BeginAnimation(true);
     }
 
 	public void HideFlag()
 	{
-        flagSprite.enabled = false;
+        flagSprite.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
+        flagAnimator.BeginAnimation(false);
     }
 
     public void Hide()
@@ -118,6 +128,15 @@ public class TileIcon : MonoBehaviour
         mineSprite.enabled = false;
         flagSprite.enabled = false;
         numberText.enabled = false;
+    }
+
+    public void AnimationCompleted(bool revealed)
+    {
+        flagSprite.maskInteraction = SpriteMaskInteraction.None;
+        if (!revealed)
+        {
+            flagSprite.enabled = false;
+        }
     }
 }
 

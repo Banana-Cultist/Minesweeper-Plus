@@ -29,6 +29,9 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
     public bool isFirst = true;
     public bool paused = false;
     public BoardDelegate menuDelegate;
+    public TileAnimationController tileAnimator;
+
+    private List<TileController> clearingGroup = new();
 
     // Start is called before the first frame update
     void Start()
@@ -224,6 +227,12 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
         
         hud.text = "<color=\"blue\">" + Mathf.RoundToInt(Time.time - startTime) + "</color> / " +
                        "<color=\"red\">" + minesLeft + "</color>";
+
+        foreach (TileController tile in clearingGroup)
+        {
+            tile.Clear();
+        }
+        clearingGroup.Clear();
     }
 
     public void Click(TileController tile)
@@ -244,13 +253,14 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
         if (!tile.cleared && !tile.flagged)
         {
+            tile.cleared = true;
             if (tile.adjacentMines == 0)
             {
                 ClearEmpty(tile);
             }
             else
             {
-                tile.Clear();
+                clearingGroup.Add(tile);
                 cleared++;
             }
         }
@@ -269,19 +279,22 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
     {
         HashSet<TileController> visited = new();
         List<TileController> toClear = new() { tile };
-        while (toClear.Count != 0)
+        while (toClear.Count > 0)
         {
             TileController current = toClear[0];
             toClear.RemoveAt(0);
             visited.Add(current);
-            current.Unflag();
-            current.Clear();
+
+            //current.Unflag();
+
+            clearingGroup.Add(current);
+
             cleared++;
             if (current.adjacentMines == 0)
             {
                 foreach (TileController neighbor in current.adjacents)
                 {
-                    if (!neighbor.cleared && !toClear.Contains(neighbor)) toClear.Add(neighbor);
+                    if (!neighbor.cleared && !toClear.Contains(neighbor) && !visited.Contains(neighbor)) toClear.Add(neighbor);
                 }
             }
         }

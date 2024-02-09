@@ -65,6 +65,11 @@ public class PriorityQueue<T> where T : IComparable
         return value;
     }
 
+    public T Peak()
+    {
+        return data[0];
+    }
+
     private void Swap(ref T a, ref T b)
     {
         (a, b) = (b, a);

@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.U2D;
 
-[ExecuteAlways]
+[ExecuteInEditMode]
 public class TileController : MonoBehaviour
 {
     public Vector2[] points;
@@ -44,17 +44,13 @@ public class TileController : MonoBehaviour
         RemoveClosePoints(0.1);
 
         tileRenderer.SetPoints(points);
-
-        tileRenderer.SetCoverColor(ApplyAccent(fillColor, fillAccent));
-
-        tileRenderer.SetFillColor(ApplyAccent(fillColor, fillAccent));
-
+        tileRenderer.SetCoverColor(fillColor);
+        tileRenderer.SetFillColor(ApplyAccent(fillColor, Vector3.one * 0.5f));
         tileRenderer.SetBorderColor(borderColor);
-        
         tileRenderer.SetBorderWidth(tileDelegate == null ? 1 : tileDelegate.GetLineWidth());
 
         // update textbox shape
-        image.Resize(points, tileRenderer);
+        image.Resize(points, GetBounds());
     }
 
     private void RemoveClosePoints(double accuracy)
@@ -117,7 +113,7 @@ public class TileController : MonoBehaviour
     void LateUpdate()
     {
         if (tileDelegate == null || tileDelegate.IsPaused()) return;
-        if (tileRenderer.Contains(Camera.main.ScreenToWorldPoint(Input.mousePosition)))
+        if (Contains(points, Camera.main.ScreenToWorldPoint(Input.mousePosition)))
         {
             if (Input.GetMouseButtonDown(0) || Settings.IsClearBindingPressed())
             {
@@ -141,18 +137,87 @@ public class TileController : MonoBehaviour
         }
     }
 
+    public Bounds GetBounds()
+    {
+        float minX = points[0].x;
+        float maxX = minX;
+        float minY = points[0].y;
+        float maxY = minY;
+
+        for (int i = 1; i < points.Length; i++)
+        {
+            float x = points[i].x;
+            maxX = x > maxX ? x : maxX;
+            minX = x < minX ? x : minX;
+            float y = points[i].y;
+            maxY = y > maxY ? y : maxY;
+            minY = y < minY ? y : minY;
+        }
+
+        Vector3 center = new((minX + maxX) / 2, (minY + maxY) / 2);
+        Vector3 size = new(maxX - minX, maxY - minY);
+        return new Bounds(center, size);
+    }
+
+    public static bool Contains(Vector2[] points, Vector2 p)
+    {
+        bool contained = false;
+        Vector2 p1 = points[0];
+        Vector2 p2;
+        for (int i = 1; i <= points.Length; i++)
+        {
+            p2 = points[i % points.Length];
+            if (p.y > Math.Min(p1.y, p2.y) &&
+                p.y <= Math.Max(p1.y, p2.y) &&
+                p.x <= Math.Max(p1.x, p2.x))
+            {
+                float intersection = (p.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
+                if (p1.x == p2.x || p.x <= intersection)
+                {
+                    contained = !contained;
+                }
+            }
+            p1 = p2;
+        }
+        return contained;
+    }
+
+    public bool Contains(Vector2 p)
+    {
+        return Contains(points, p);
+    }
+
+    public float MaxDistance(Vector2 p)
+    {
+        float max = float.MinValue;
+        for (int i = 0; i < points.Length; i++)
+        {
+            float dist2 = (points[i] - p).magnitude;
+            if (dist2 > max)
+            {
+                max = dist2;
+            }
+        }
+        return max;
+    }
+
     public void Clear()
     {
         fillAccent = Vector3.one * 0.5f;
         //borderAccent = Vector3.one * 1;
         //borderController.sortingOrder = 1;
         //text.enabled = true;
-        image.ShowNumber();
-        cleared = true;
+        tileRenderer.fill.SetActive(true);
+        tileRenderer.cover.SetActive(false);
         if (isMine)
         {
             image.ShowMine();
         }
+        else
+        {
+            image.ShowNumber();
+        }
+        cleared = true;
     }
 
     public void Flag()
@@ -203,5 +268,15 @@ public class TileController : MonoBehaviour
                 //text.enabled = true;
             }
         }
+    }
+
+    public void PrepClearAnimation()
+    {
+        
+    }
+
+    public void FinishClearAnimation()
+    {
+
     }
 }
