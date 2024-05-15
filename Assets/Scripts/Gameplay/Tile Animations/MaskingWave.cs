@@ -1,34 +1,54 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
+using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class MaskingWave : MonoBehaviour
 {
 	private PriorityQueue<TileComparable> toClear;
 	public SpriteMask mask;
-	public float radius = 1;
-	public float expansionRate = 1.1F;
+	public float radius;
+	public float expansionRate;
 
-	public MaskingWave(TileController[] toClear, Vector2 position)
-	{
+	private MaskingWaveDelegate maskingWaveDelegate;
+
+	public void Initialize(List<TileController> toClear, int maskId, MaskingWaveDelegate maskingWaveDelegate) {
 		this.toClear = new();
-		foreach (TileController tile in toClear)
-		{
-			this.toClear.Insert(new TileComparable(tile, tile.MaxDistance(position)));
+		this.maskingWaveDelegate = maskingWaveDelegate;
+
+		foreach(TileController tile in toClear) {
+			float maxDistance = 0;
+			foreach(Vector2 point in tile.points) {
+				float distance = Vector2.Distance(point, transform.position);
+				if (distance > maxDistance) {
+					maxDistance = distance;
+				}
+			}
+			this.toClear.Insert(new TileComparable(tile, maxDistance));
+
+			tile.PrepClearAnimation(maskId);
 		}
+
+		mask.frontSortingOrder = maskId + 2;
+		mask.backSortingOrder = maskId;
 	}
 
     public void Update()
     {
-		radius *= expansionRate;
-		mask.transform.localScale = Vector3.one * radius;
-        if (toClear.Length() == 0)
+		if (toClear.Length() == 0)
         {
-			
+			maskingWaveDelegate.MaskingWaveCompleted(this);
+			return;
         }
-        while (toClear.Peak().GetDistance() < radius)
+
+		// radius *= expansionRate;
+		radius += expansionRate;
+		mask.transform.localScale = Vector3.one * radius * 2.4f;
+        while (toClear.Length() > 0 && toClear.Peak().GetDistance() < radius)
 		{
 			TileController tile = toClear.Pull().GetTile();
+			tile.FinishClearAnimation();
 		}
     }
 
@@ -48,7 +68,7 @@ public class MaskingWave : MonoBehaviour
 			if (obj == null) return 1;
 			TileComparable other = obj as TileComparable;
 			if (other.distance == this.distance) return 0;
-			if (other.distance > this.distance) return 1;
+			if (other.distance < this.distance) return 1;
 			return -1;
         }
 

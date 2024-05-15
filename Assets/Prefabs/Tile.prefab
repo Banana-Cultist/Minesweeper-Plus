@@ -150,8 +150,8 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 0, g: 0, b: 0, a: 0}
+      key1: {r: 0, g: 0, b: 0, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -267,7 +267,6 @@ MonoBehaviour:
   - {x: -50, y: -50}
   - {x: -25, y: 0}
   fillColor: {r: 0.9339623, g: 0.6035511, b: 0.6035511, a: 1}
-  fillAccent: {x: 0, y: 0, z: 0}
   borderColor: {r: 1, g: 1, b: 1, a: 1}
   borderAccent: {x: 0, y: 0, z: 0}
   cleared: 0
@@ -366,7 +365,7 @@ SpriteShapeRenderer:
   m_SortingLayerID: 923695993
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Color: {r: 0.9339623, g: 0.6035511, b: 0.6035511, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_MaskInteraction: 0
   m_ShapeTexture: {fileID: 2800000, guid: b281b91a70a624a0da1c43adc1c30c7b, type: 3}
   m_Sprites:
@@ -596,7 +595,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mask: {fileID: 4430626049243823635}
   time: 0
-  duration: 0.5
+  duration: 0.2
   isOpening: 0
   isActive: 0
 --- !u!1 &5968360733534824740
@@ -681,7 +680,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6091408031529219558}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 727, y: 356.5, z: 0}
+  m_LocalPosition: {x: 545, y: 356.5, z: 0}
   m_LocalScale: {x: 37.5, y: 37.5, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -820,7 +819,7 @@ SpriteShapeRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Color: {r: 0.9339623, g: 0.6035511, b: 0.6035511, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_MaskInteraction: 0
   m_ShapeTexture: {fileID: 2800000, guid: b281b91a70a624a0da1c43adc1c30c7b, type: 3}
   m_Sprites:
@@ -982,7 +981,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 727, y: 356.5}
+  m_AnchoredPosition: {x: 545, y: 356.5}
   m_SizeDelta: {x: 37.5, y: 37.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &5040226623896561071
@@ -1144,7 +1143,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9123989342716713792}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 727, y: 356.5, z: 0}
+  m_LocalPosition: {x: 545, y: 356.5, z: 0}
   m_LocalScale: {x: 37.5, y: 37.5, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []

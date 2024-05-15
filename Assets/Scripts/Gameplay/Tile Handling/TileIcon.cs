@@ -126,8 +126,9 @@ public class TileIcon : MonoBehaviour, IFlagAnimatorDelegate
     public void Hide()
     {
         mineSprite.enabled = false;
-        flagSprite.enabled = false;
         numberText.enabled = false;
+        flagSprite.enabled = false;
+        flagAnimator.ResetAnimation();
     }
 
     public void AnimationCompleted(bool revealed)
@@ -137,6 +138,20 @@ public class TileIcon : MonoBehaviour, IFlagAnimatorDelegate
         {
             flagSprite.enabled = false;
         }
+    }
+
+    public void PrepClearAnimation(int maskId) {
+        flagSprite.sortingLayerID = SortingLayer.NameToID("Cover");
+        flagSprite.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        flagSprite.sortingOrder = maskId + 1;
+        flagAnimator.ResetAnimation();
+    }
+
+    public void CompleteClearAnimation() {
+        flagSprite.enabled = false;
+        flagSprite.sortingLayerID = SortingLayer.NameToID("Flag");
+        flagSprite.maskInteraction = SpriteMaskInteraction.None;
+        flagSprite.sortingOrder = 1;
     }
 }
 

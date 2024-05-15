@@ -11,7 +11,6 @@ public class TileController : MonoBehaviour
     public Vector2[] points;
     public HashSet<TileController> adjacents = new();
     public Color fillColor;
-    public Vector3 fillAccent = Vector3.zero;
     public Color borderColor;
     public Vector3 borderAccent = Vector3.zero;
     public bool cleared = false;
@@ -44,13 +43,20 @@ public class TileController : MonoBehaviour
         RemoveClosePoints(0.1);
 
         tileRenderer.SetPoints(points);
-        tileRenderer.SetCoverColor(fillColor);
-        tileRenderer.SetFillColor(ApplyAccent(fillColor, Vector3.one * 0.5f));
-        tileRenderer.SetBorderColor(borderColor);
+        // tileRenderer.SetCoverColor(fillColor);
+        // tileRenderer.SetFillColor(ApplyAccent(fillColor, Vector3.one * 0.5f));
+        // tileRenderer.SetBorderColor(borderColor);
         tileRenderer.SetBorderWidth(tileDelegate == null ? 1 : tileDelegate.GetLineWidth());
 
         // update textbox shape
         image.Resize(points, GetBounds());
+    }
+
+    public void UpdateColor()
+    {
+        tileRenderer.SetCoverColor(fillColor);
+        tileRenderer.SetFillColor(ApplyAccent(fillColor, Vector3.one * 0.5f));
+        tileRenderer.SetBorderColor(borderColor);
     }
 
     private void RemoveClosePoints(double accuracy)
@@ -75,7 +81,6 @@ public class TileController : MonoBehaviour
 
     public void UpdateLabel()
     {
-
         image.SetNumber(adjacentMines);
     }
 
@@ -103,9 +108,6 @@ public class TileController : MonoBehaviour
         }
 #endif
 
-        tileRenderer.SetFillColor(ApplyAccent(fillColor, fillAccent));
-        tileRenderer.SetCoverColor(ApplyAccent(fillColor, fillAccent));
-
         tileRenderer.SetHighlight(highlight);
         highlight = Highlight.None;
     }
@@ -113,26 +115,25 @@ public class TileController : MonoBehaviour
     void LateUpdate()
     {
         if (tileDelegate == null || tileDelegate.IsPaused()) return;
-        if (Contains(points, Camera.main.ScreenToWorldPoint(Input.mousePosition)))
+        Vector3 clickPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (Contains(points, clickPos))
         {
             if (Input.GetMouseButtonDown(0) || Settings.IsClearBindingPressed())
             {
                 // clear
                 tileDelegate.Click(this);
+                tileDelegate.SetClickPosition(clickPos);
             }
             else if (Input.GetMouseButtonDown(1) || Settings.IsFlagBindingPressed())
             {
                 // flag
                 tileDelegate.Flag(this);
             }
-            else
+            // highlight
+            highlight = Highlight.Selected;
+            foreach (TileController neighbor in adjacents)
             {
-                // highlight
-                highlight = Highlight.Selected;
-                foreach (TileController neighbor in adjacents)
-                {
-                    neighbor.highlight = Highlight.Adjacent;
-                }
+                neighbor.highlight = Highlight.Adjacent;
             }
         }
     }
@@ -201,52 +202,27 @@ public class TileController : MonoBehaviour
         return max;
     }
 
-    public void Clear()
-    {
-        fillAccent = Vector3.one * 0.5f;
-        //borderAccent = Vector3.one * 1;
-        //borderController.sortingOrder = 1;
-        //text.enabled = true;
-        tileRenderer.fill.SetActive(true);
-        tileRenderer.cover.SetActive(false);
-        if (isMine)
-        {
-            image.ShowMine();
-        }
-        else
-        {
-            image.ShowNumber();
-        }
-        cleared = true;
-    }
-
     public void Flag()
     {
-        //fillAccent = new Vector3(1, -1, -1);
-        //borderAccent = Vector3.one * 1;
-        //borderController.sortingOrder = 2;
         flagged = true;
         image.ShowFlag();
     }
 
     public void Unflag()
     {
-        //fillAccent = Vector3.zero;
-        //borderAccent = Vector3.zero;
-        //borderController.sortingOrder = 0;
         flagged = false;
         image.HideFlag();
     }
 
-    public void ResetValues()
+    public void Reset()
     {
-        fillAccent = Vector3.zero;
         flagged = false;
         cleared = false;
         adjacentMines = 0;
         isMine = false;
         UpdateLabel();
         image.Hide();
+        tileRenderer.Reset();
     }
 
     public void Reveal()
@@ -260,7 +236,6 @@ public class TileController : MonoBehaviour
             else if (!isMine && flagged)
             {
                 image.Hide();
-                fillAccent = new Vector3(1, -1, -1);
                 //text.enabled = true;
             }
             else if (!isMine && !flagged)
@@ -270,13 +245,28 @@ public class TileController : MonoBehaviour
         }
     }
 
-    public void PrepClearAnimation()
+    public void PrepClearAnimation(int maskId)
     {
+        tileRenderer.PrepClearAnimation(maskId);
+        cleared = true;
+        if (isMine)
+        {
+            image.ShowMine();
+        }
+        else
+        {
+            image.ShowNumber();
+        }
         
+        // image.flagSprite.enabled = true;
+
+        flagged = false;
+        image.PrepClearAnimation(maskId);
     }
 
     public void FinishClearAnimation()
     {
-
+        tileRenderer.FinishClearAnimation();
+        image.CompleteClearAnimation();
     }
 }

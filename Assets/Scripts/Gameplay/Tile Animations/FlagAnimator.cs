@@ -49,5 +49,13 @@ public class FlagAnimator: MonoBehaviour
 		originalScale = scale;
 		originalPosition = position;
 	}
-}
 
+	public void ResetAnimation() {
+		mask.transform.localScale = Vector3.zero;
+		mask.transform.localPosition = originalPosition + 
+				new Vector3(0, mask.bounds.extents.y - originalScale.y / 2, 0);
+		time = 0;
+		mask.enabled = false;
+		isActive = false;
+	}
+}

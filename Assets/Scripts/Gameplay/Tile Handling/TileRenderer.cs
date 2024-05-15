@@ -148,4 +148,26 @@ public class TileRenderer : MonoBehaviour
         borderController.startWidth = width;
         borderController.endWidth = width;
     }
+
+    public void PrepClearAnimation(int maskId)
+    {
+        coverRenderer.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        coverRenderer.sortingOrder = maskId;
+        fill.SetActive(true);
+        
+    }
+
+    public void FinishClearAnimation()
+    {
+        coverRenderer.maskInteraction = SpriteMaskInteraction.None;
+        coverRenderer.sortingOrder = 0;
+        cover.SetActive(false);
+    }
+
+    public void Reset() {
+        coverRenderer.maskInteraction = SpriteMaskInteraction.None;
+        coverRenderer.sortingOrder = 0;
+        cover.SetActive(true);
+        fill.SetActive(false);
+    }
 }

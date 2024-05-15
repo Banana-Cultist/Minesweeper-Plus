@@ -9,6 +9,8 @@ public interface ITileDelegate
     void Click(TileController tile);
     void Flag(TileController tile);
     float GetLineWidth();
+
+    void SetClickPosition(Vector3 pos);
 }
 
 public interface IBoardTypeDelegate
@@ -33,25 +35,30 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
     private List<TileController> clearingGroup = new();
 
+    private Vector2 clearingGroupPosition;
+
     // Start is called before the first frame update
     void Start()
     {
         bounds = GetComponent<RectTransform>();
-        int w = 25;
+        int w = 10;
         //tiles = GridBoard.initialize(this, w, w, bounds, 135f, 0);
         tiles = VoronoiBoard.Initialize(this, w*w, bounds, 30);
-        PlaceMines(w * w / 5);
+        totalMines = w * w / 5;
+        ResetBoard();
         InitializeBoard();
         ColorBoard();
-        startTime = Time.time;
+        // PlaceMines(w * w / 5);
+        // startTime = Time.time;
     }
 
     public void ResetBoard()
     {
         foreach (TileController tile in tiles)
         {
-            tile.ResetValues();
+            tile.Reset();
         }
+        
         minesLeft = totalMines;
         cleared = 0;
         isFirst = true;
@@ -61,7 +68,10 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
         foreach(TileController tile in tiles)
         {
             tile.UpdateLabel();
+            tile.image.ShowNumber();
         }
+
+        tileAnimator.Reset();
     }
 
     public TileController CreateTile() {
@@ -97,10 +107,12 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
     {
         totalMines = mines;
         minesLeft = mines;
-        foreach(TileController tile in tiles)
-        {
-            tile.ResetValues();
+
+        foreach (TileController tile in tiles) {
+            tile.adjacentMines = 0;
+            tile.isMine = false;
         }
+
         List<TileController> available = new(tiles);
         available.Remove(clearance);
         foreach(TileController neighbor in clearance.adjacents)
@@ -200,6 +212,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
             Color collapsed = possibilities[0];
             selected.fillColor = collapsed;
+            selected.UpdateColor();
             colorPossibilities.Remove(selected);
             foreach(TileController neighbor in selected.adjacents)
             {
@@ -228,10 +241,13 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
         hud.text = "<color=\"blue\">" + Mathf.RoundToInt(Time.time - startTime) + "</color> / " +
                        "<color=\"red\">" + minesLeft + "</color>";
 
-        foreach (TileController tile in clearingGroup)
-        {
-            tile.Clear();
+        if (clearingGroup.Count > 0) {
+            tileAnimator.ClearingAnimation(clearingGroup, clearingGroupPosition);
         }
+        // foreach (TileController tile in clearingGroup)
+        // {
+        //     // tile.Clear();
+        // }
         clearingGroup.Clear();
     }
 
@@ -241,6 +257,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
         if (Settings.GetToggle(Toggles.CLEAN_OPENING) && isFirst)
         {
+            Debug.Log("First Click; Replacing Mines");
             PlaceMines(totalMines, tile);
             isFirst = false;
         }
@@ -271,6 +288,15 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
 
         if (tiles.Count - cleared == totalMines)
         {
+            foreach(TileController remaining in tiles) {
+                if (!remaining.cleared) {
+                    if (remaining.isMine) {
+                        remaining.Flag();
+                    } else {
+                        clearingGroup.Add(remaining);
+                    }
+                }
+            }
             menuDelegate.GameCompleted(true);
         }
     }
@@ -285,7 +311,7 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
             toClear.RemoveAt(0);
             visited.Add(current);
 
-            //current.Unflag();
+            // current.Unflag();
 
             clearingGroup.Add(current);
 
@@ -294,7 +320,12 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
             {
                 foreach (TileController neighbor in current.adjacents)
                 {
-                    if (!neighbor.cleared && !toClear.Contains(neighbor) && !visited.Contains(neighbor)) toClear.Add(neighbor);
+                    if (!neighbor.cleared &&
+                        !toClear.Contains(neighbor) &&
+                        !visited.Contains(neighbor))
+                    {
+                        toClear.Add(neighbor);
+                    }
                 }
             }
         }
@@ -427,5 +458,10 @@ public class BoardController : MonoBehaviour, ITileDelegate, IBoardTypeDelegate
     public float GetLineWidth()
     {
         return bounds.sizeDelta.magnitude / Mathf.Sqrt(tiles.Count) / 20;
+    }
+
+    public void SetClickPosition(Vector3 pos)
+    {
+        clearingGroupPosition = pos;
     }
 }
